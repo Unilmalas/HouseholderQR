@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<h1>SVD</h1>
+<script>
+'use strict';
+
+//console.log('pythag: ' + pythag(2, 4));
+
+var a = createArray(4, 4);
+var v = createArray(4, 4);
+
+/*a = 	[	[4.0, 1.0, -2.0, 2.0],
+			[1.0, 2.0, 0.0, 1.0],
+			[-2.0, 0.0, 3.0, -2.0],
+			[2.0, 1.0, -2.0, -1.0]];*/
+a = 	[	[12.0, -51.0, 4.0],
+			[6.0, 167.0, -68.0],
+			[-4.0, 24.0, -41.0]];
+var w = [0.0, 0.0, 0.0, 0.0];
+v = 	[0.0, 0.0, 0.0, 0.0];
+			//[0.0, 0.0, 0.0],
+			//[0.0, 0.0, 0.0]];
+var p = [	[0.0, 0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0, 0.0]];
+var c = [	[0.0, 0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0, 0.0]];
+			
+//console.log('a ' + a.toString());
+/*
+svdcmp(a, 3, 3, w, v);
+reorder(a, v, 3, 3);
+
+for( var i=0; i<3; i++) {
+	console.log('svd w ' + w[i].toString());
+	//for( var j=0; j<2; j++) {
+		console.log('svd a ' + a[i].toString());
+		console.log('svd v ' + v[i].toString());
+	//}
+}*/
+var myn = 3;
+/*
+console.log('alpha: ' + alpha(a, 0, myn));
+console.log('r: ' + r(alpha(a, 0, myn), a, 0));
+vvec(a, 0, myn);
+console.log('v: ' + v.toString());
+pmat(v, myn);
+console.log('p0: ' + p[0].toString());
+console.log('p1: ' + p[1].toString());
+console.log('p2: ' + p[2].toString());
+//console.log('p3: ' + p[3].toString());
+mmult(p, a, c, myn);
+mmult(c, p, a, myn);
+console.log('a0: ' + a[0].toString());
+console.log('a1: ' + a[1].toString());
+console.log('a2: ' + a[2].toString());
+//console.log('a3: ' + a[3].toString());
+
+console.log('alpha: ' + alpha(a, 1, myn));
+console.log('r: ' + r(alpha(a, 1, myn), a, 1));
+vvec(a, 1, myn);
+console.log('v: ' + v.toString());
+pmat(v, myn);
+console.log('p0: ' + p[0].toString());
+console.log('p1: ' + p[1].toString());
+console.log('p2: ' + p[2].toString());
+//console.log('p3: ' + p[3].toString());
+mmult(p, a, c, myn);
+mmult(c, p, a, myn);
+console.log('a0: ' + a[0].toString());
+console.log('a1: ' + a[1].toString());
+console.log('a2: ' + a[2].toString());
+//console.log('a3: ' + a[3].toString()); */
+// correct !
+
+/*var t1 = 	[[1.0, 0.0],
+			[-2.0, 1.0]];
+var t2 = 	[[1.0, 0.0],
+			[-2.0, 1.0]];
+var tres = 	[[1.0, 0.0],
+			[-2.0, 1.0]];
+mmult(t1, t2, tres, 2);
+console.log('t0: ' + tres[0].toString());
+console.log('t1: ' + tres[1].toString()); */
+
+// Hausholder reflections to reduce A to a bidiagonal matrix (from wikipedia / Burden et al.)
+// 1: calculate alpha(k) and r(k)
+// 2: determine vector v(k)
+// 3: calculate matrix P(k) where A(k+1) = P(k) * A(k) * P(k) with A(0)=A
+// process repeated for k=1,2,...,n-1 but since indices start with 0 here: k=0,1,...,n-2
+
+function alpha(a, k, n) { // alpha = -sgn(a k+1,k) * sqrt( sum over j=k+1 to n: a j,k ^2)
+	var s = 0.0;
+	for( var j=k+1; j<n; j++) // note: all indices start from 0
+		s += a[j][k] * a[j][k];
+	return -sign_(a[k+1][k]) * Math.sqrt(s);
+}
+
+function r(alpha, a, k) { // r = sqrt( ( alpha^2 - a k+1,k * alpha) / 2 )
+	return Math.sqrt(( alpha * alpha - a[k+1][k] * alpha) / 2.0 );
+}
+
+function vvec(a, k, n) { // v = till k all 0, for k: a k,1 / (2*r), for k+1 till n: (a k+1,k - alpha) / (2*r)
+	var alpha_ = alpha(a, k, n);
+	for( var j=0; j<n; j++) {
+		if ( j<=k ) v[j] = 0.0; // note: indices start with 0
+		else if ( j == k+1 ) v[j] = (a[j][k] - alpha_) / (2.0 * r(alpha_, a, k));
+		else v[j] = a[j][k] / (2.0 * r(alpha_, a, k));
+	}
+}
+
+function pmat(v, n) { // P = I - 2 * vk * vk(T)
+	for ( var i=0; i<n; i++)
+		for ( var j=0; j<n; j++) {
+			if ( i == j ) p[i][j] = 1.0 - 2.0 * v[i] * v[j];
+			else p[i][j] = - 2.0 * v[i] * v[j];
+		}
+}
+
+function mmult(a, b, c, n) { // simple matrix multiplication, output goes into c
+	for ( var i=0; i<n; i++)
+		for ( var j=0; j<n; j++) {
+			c[i][j] = 0.0;
+			for ( var k=0; k<n; k++)
+				c[i][j] += a[i][k] * b[k][j];
+		}
+}
+
+// QR-decomposition via Householder reflrections (from wikipedia)
+// u = x - alpha * e1, x = a1, alpha = norm(x) = norm(a1)
+// v = u / norm(u)
+// use pmat on v, resulting in Q in p
+// apply same process on (1,1) minor
+
+function alphaQR(a, k, n) { // alpha = sqrt( sum over j=k to n: a j,k ^2) i.e. length of k-th column vector at k-th minor; returns alphaQR
+	var s = 0.0;
+	for( var j=k; j<n; j++) // note: all indices start from 0
+		s += a[j][k] * a[j][k];
+	return Math.sqrt(s);
+}
+
+function vvecQR(a, k, n) { // u = x - alpha * ek, x = ak, v = u / norm(u) -> result stored in v
+	var alpha_ = alphaQR(a, k, n);
+	v.push(a[k][k] - alpha_); // u = x - alpha * ek, x = ak
+	for( var j=k+1; j<n; j++)
+		v.push(a[j][k]);
+	var s = 0.0;
+	for( var j=k; j<n; j++) {// v = u / norm(u)
+		s += v[j] * v[j];
+	}
+	s = Math.sqrt(s);
+	for( var j=k; j<n; j++)
+		v[j] /= s;
+}
+
+// wikipedia example
+
+myn = 3;
+a = 	[	[12.0, -51.0, 4.0],
+			[6.0, 167.0, -68.0],
+			[-4.0, 24.0, -41.0]];
+v = []; // need to fill this with 0 till k-1 as routines only operate on the kth minors
+vvecQR(a, 0, myn);
+pmat(v, myn);
+mmult(p, a, c, myn);
+v = [0.0];
+vvecQR(c, 1, myn);
+pmat(v, myn);
+mmult(p, c, a, myn);
+console.log('a0: ' + a[0].toString());
+console.log('a1: ' + a[1].toString());
+console.log('a2: ' + a[2].toString());
+// correct !
+
+function createArray(length) {
+    var arr = new Array(length || 0),
+        i = length;
+
+    if (arguments.length > 1) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        while(i--) arr[length-1 - i] = createArray.apply(this, args);
+    }
+    return arr;
+}
+
+function sign(a, b) { return b >= 0.0 ? Math.abs(a) : -Math.abs(a); }
+function sign_(a) { return a >= 0.0 ? 1.0 : -1.0; }
+
+function pythag(a, b) { // computes (a^2 + b^2)^(1/2)
+  var absa, absb;
+  absa = Math.abs(a);
+  absb = Math.abs(b);
+  if( absa>absb )
+    return absa * Math.sqrt(1.0 + (absb/absa)^2);
+  else
+    return (absb == 0.0) ? 0.0 : absb * Math.sqrt(1.0 + (absa/absb)^2);
+}
+
+</script>
+
+</body>
+</html>
