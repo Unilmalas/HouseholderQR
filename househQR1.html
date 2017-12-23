@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<h1>HH</h1>
+<script>
+'use strict';
+var a = createArray(3, 3);
+a = 	[	[0.0, -4.0, 2.0],
+			[6.0, -3.0, -2.0],
+			[8.0, 1.0, -1.0]];
+
+let v0 = vvec(a, 0, 3);
+//console.log(v0);
+let h1 = hmat(v0, 3);
+//console.log(h1);
+var a1 = createArray(3, 3);
+mmult(h1, a, a1, 3);
+let h2 = hmat(vvec(a1, 1, 3), 3);
+var a2 = createArray(3, 3);
+mmult(h2, a1, a2, 3);
+console.log(a2);	
+
+// Hausholder reflections to reduce A to a bidiagonal matrix
+// 1: calculate v(k)
+// 2: calculate matrix H(k) where A(k+1) = H(k) * A(k) with A(0)=A
+// process repeated for k=1,2,...,n-1 but since indices start with 0 here: k=0,1,...,n-2
+
+function vvec(a, k, n) { // v = ai - sgn(a11) |ai| e1
+	let v = createArray(n, 1);
+	let norma = 0.0;
+	for( let j=0; j<n; j++)
+		norma += a[j][k] * a[j][k];
+	norma = Math.sqrt(norma);
+	let signa = sign_(a[k][k]);
+	for( let j=0; j<n; j++) {
+		if ( j === k ) v[j] = a[j][k] + signa * norma; // note: indices start with 0
+		else v[j] = a[j][k];
+	}
+	return v;
+}
+
+function hmat(v, n) { // H = I - 2 * vk * vk(T)
+	let h = createArray(n, n);
+	let normv = 0.0;
+	for( let j=0; j<n; j++)
+		normv += v[j] * v[j];
+	for ( let i=0; i<n; i++)
+		for ( let j=0; j<n; j++) {
+			if ( i == j ) h[i][j] = 1.0 - 2.0 * v[i] * v[j] / normv;
+			else h[i][j] = - 2.0 * v[i] * v[j] / normv;
+		}
+	return h;
+}
+
+function mmult(a, b, c, n) { // simple matrix multiplication, output goes into c
+	for ( let i=0; i<n; i++)
+		for ( let j=0; j<n; j++) {
+			c[i][j] = 0.0;
+			for ( let k=0; k<n; k++)
+				c[i][j] += a[i][k] * b[k][j];
+		}
+}
+
+function alpha(a, k, n) { // alpha = -sgn(a k+1,k) * sqrt( sum over j=k+1 to n: a j,k ^2)
+	let s = 0.0;
+	for( let j=k+1; j<n; j++) // note: all indices start from 0
+		s += a[j][k] * a[j][k];
+	return -sign_(a[k+1][k]) * Math.sqrt(s);
+}
+
+function r(alpha, a, k) { // r = sqrt( ( alpha^2 - a k+1,k * alpha) / 2 )
+	return Math.sqrt(( alpha * alpha - a[k+1][k] * alpha) / 2.0 );
+}
+
+function createArray(length) {
+    let arr = new Array(length || 0),
+        i = length;
+    if (arguments.length > 1) {
+        let args = Array.prototype.slice.call(arguments, 1);
+        while(i--) arr[length-1 - i] = createArray.apply(this, args);
+    }
+    return arr;
+}
+
+function sign(a, b) { return b >= 0.0 ? Math.abs(a) : -Math.abs(a); }
+function sign_(a) { return a >= 0.0 ? 1.0 : -1.0; }
+
+function pythag(a, b) { // computes (a^2 + b^2)^(1/2)
+  let absa, absb;
+  absa = Math.abs(a);
+  absb = Math.abs(b);
+  if( absa>absb )
+    return absa * Math.sqrt(1.0 + (absb/absa)^2);
+  else
+    return (absb == 0.0) ? 0.0 : absb * Math.sqrt(1.0 + (absa/absb)^2);
+}
+
+</script>
+
+</body>
+</html>
